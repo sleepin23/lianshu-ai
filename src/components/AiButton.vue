@@ -58,4 +58,28 @@ const togglePanel = () => {
   font-weight: bold;
   font-size: 20px;
 }
+
+/* 移动设备响应式样式 */
+@media (max-width: 768px) {
+  .ai-button {
+    bottom: 15px;
+    right: 15px;
+    width: 50px;
+    height: 50px;
+  }
+
+  .ai-icon {
+    font-size: 18px;
+  }
+}
+
+/* 小屏幕设备 */
+@media (max-width: 480px) {
+  .ai-button {
+    bottom: 10px;
+    right: 10px;
+    width: 45px;
+    height: 45px;
+  }
+}
 </style>

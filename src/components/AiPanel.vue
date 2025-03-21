@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import { ref, defineProps, defineEmits, inject, watch, onMounted, nextTick, provide } from 'vue';
-import { PageContext } from '../services/contextService';
+import type { PageContext } from '../services/contextService';
 
 const props = defineProps<{
   isOpen: boolean
@@ -212,6 +212,8 @@ onMounted(() => {
   transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1000;
   border-left: 1px solid var(--border-color);
+  border-radius: 10px 0 0 10px; /* 添加左侧圆角 */
+  overflow: hidden; /* 确保内容不会溢出圆角 */
 }
 
 .ai-panel.open {
@@ -291,6 +293,7 @@ onMounted(() => {
   border-radius: 18px;
   font-size: 14px;
   line-height: 1.5;
+  overflow: hidden; /* 确保内容不会溢出圆角 */
 }
 
 .message.system .message-content {
@@ -366,5 +369,94 @@ onMounted(() => {
 
 .send-button:hover {
   background-color: var(--primary-hover);
+}
+
+/* 移动设备响应式样式 */
+@media (max-width: 768px) {
+  .ai-panel {
+    width: 100%;
+    right: -100%;
+    border-radius: 10px 0 0 10px; /* 保持左侧圆角 */
+  }
+
+  .ai-panel.open {
+    right: 0;
+  }
+
+  .chat-container {
+    padding: 15px;
+  }
+
+  .message-content {
+    max-width: 85%;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .panel-header {
+    padding: 12px 15px;
+  }
+
+  .input-container {
+    padding: 10px;
+  }
+
+  .message-input {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .send-button {
+    padding: 0 15px;
+    font-size: 14px;
+  }
+}
+
+/* 小屏幕设备额外调整 */
+@media (max-width: 480px) {
+  .ai-panel {
+    border-radius: 15px 0 0 15px; /* 在小屏幕上增大左侧圆角 */
+  }
+
+  .chat-container {
+    padding: 10px;
+  }
+
+  .message {
+    margin-bottom: 8px;
+  }
+
+  .message-content {
+    max-width: 90%;
+    padding: 8px 12px;
+    font-size: 14px;
+    word-break: break-word;
+  }
+
+  .chat-messages {
+    gap: 10px;
+  }
+
+  .panel-header {
+    padding: 10px;
+  }
+
+  .panel-header h2 {
+    font-size: 16px;
+  }
+
+  .input-container {
+    padding: 8px;
+  }
+
+  .message-input {
+    padding: 8px 10px;
+    height: 40px;
+  }
+
+  .send-button {
+    padding: 0 12px;
+    font-size: 14px;
+  }
 }
 </style>

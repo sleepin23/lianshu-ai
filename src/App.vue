@@ -189,4 +189,38 @@ body {
   background-color: var(--primary-color);
   color: white;
 }
+
+/* 移动设备响应式样式 */
+@media (max-width: 768px) {
+  .with-ai-panel {
+    padding-right: 0; /* 在移动设备上不需要右侧padding */
+  }
+
+  .theme-toggle {
+    top: 15px;
+    right: 15px;
+    width: 35px;
+    height: 35px;
+    font-size: 18px;
+  }
+
+  .main-container {
+    padding-bottom: 65px; /* 为移动设备上的AI按钮留出空间 */
+  }
+}
+
+/* 小屏幕设备 */
+@media (max-width: 480px) {
+  .theme-toggle {
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+
+  .main-container {
+    padding-bottom: 55px; /* 为小屏幕设备上的AI按钮留出空间 */
+  }
+}
 </style>
