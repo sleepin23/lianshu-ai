@@ -5,16 +5,24 @@
       <button class="close-button" @click="closePanel">×</button>
     </div>
     <div class="panel-content">
-      <div class="chat-container">
+      <div class="chat-container" ref="chatContainer">
         <div class="chat-messages">
           <div class="message system">
             <div class="message-content">
               <p>您好！我是您的AI助手，有什么可以帮助您的吗？</p>
             </div>
           </div>
+
           <div v-for="(message, index) in messages" :key="index" class="message" :class="message.type">
             <div class="message-content">
               <p>{{ message.text }}</p>
+            </div>
+          </div>
+
+          <!-- 上下文感知消息放在最后 -->
+          <div v-if="contextMessage" class="message ai">
+            <div class="message-content">
+              <p>{{ contextMessage }}</p>
             </div>
           </div>
         </div>
@@ -33,7 +41,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits } from 'vue';
+import { ref, defineProps, defineEmits, inject, watch, onMounted, nextTick, provide } from 'vue';
+import { PageContext } from '../services/contextService';
 
 const props = defineProps<{
   isOpen: boolean
@@ -45,11 +54,18 @@ const emit = defineEmits<{
 
 const userInput = ref('');
 const messages = ref<{ type: string, text: string }[]>([]);
+const contextMessage = ref('');
+const chatContainer = ref<HTMLElement | null>(null);
 
+// 获取页面上下文
+const pageContext = inject('pageContext') as PageContext;
+
+// 关闭面板
 const closePanel = () => {
   emit('update:isOpen', false);
 };
 
+// 发送消息
 const sendMessage = () => {
   if (userInput.value.trim() === '') return;
 
@@ -59,17 +75,127 @@ const sendMessage = () => {
     text: userInput.value
   });
 
+  // 滚动到底部
+  scrollToBottom();
+
   // 模拟AI回复
   setTimeout(() => {
+    // 根据上下文和用户输入生成回复
+    const reply = generateContextAwareReply(userInput.value);
+
     messages.value.push({
       type: 'ai',
-      text: `我收到了您的消息："${userInput.value}"。我是一个演示AI助手，目前只能回复这个固定消息。`
+      text: reply
     });
+
+    // 滚动到底部
+    scrollToBottom();
   }, 1000);
 
   // 清空输入
   userInput.value = '';
 };
+
+// 根据上下文生成回复
+const generateContextAwareReply = (userMessage: string) => {
+  // 简单的关键词匹配
+  const lowerCaseMessage = userMessage.toLowerCase();
+
+  // 根据页面类型和用户输入生成回复
+  if (pageContext.pageType === 'product') {
+    if (lowerCaseMessage.includes('价格') || lowerCaseMessage.includes('多少钱')) {
+      return `${pageContext.pageData?.product?.name}的价格是${pageContext.pageData?.product?.price}。`;
+    } else if (lowerCaseMessage.includes('功能') || lowerCaseMessage.includes('特点')) {
+      return `${pageContext.pageData?.product?.name}的主要功能包括：${pageContext.pageData?.product?.features?.slice(0, 3).join('、')}等。`;
+    } else if (lowerCaseMessage.includes('颜色')) {
+      return `${pageContext.pageData?.product?.name}有多种颜色可选，您当前选择的是${pageContext.pageData?.product?.selectedColor || '黑色'}。`;
+    }
+  } else if (pageContext.pageType === 'dashboard') {
+    if (lowerCaseMessage.includes('数据') || lowerCaseMessage.includes('统计')) {
+      return `根据仪表盘数据，您的总收入为¥128,430，比上月增长了12.5%。活跃用户数为8,642，增长了5.3%。`;
+    }
+  }
+
+  // 默认回复
+  return `我收到了您的消息："${userMessage}"。请问还有其他问题吗？`;
+};
+
+// 监听页面上下文变化，更新上下文消息
+watch(() => pageContext.lastUpdated, () => {
+  updateContextMessage();
+
+  // 当上下文变化时，滚动到底部
+  if (props.isOpen) {
+    nextTick(() => {
+      scrollToBottom();
+    });
+  }
+}, { deep: true });
+
+// 更新上下文消息
+const updateContextMessage = () => {
+  if (!pageContext.pageType) return;
+
+  let message = '';
+
+  switch (pageContext.pageType) {
+    case 'home':
+      message = `欢迎来到我们的网站！我可以帮您了解我们的产品和服务。`;
+      break;
+    case 'product':
+      message = `我看到您正在浏览${pageContext.pageData?.product?.name}。这款产品售价${pageContext.pageData?.product?.price}，是我们的热门产品。有什么我可以帮您了解的吗？`;
+      break;
+    case 'blog':
+      message = `您正在浏览博客内容。需要我为您推荐相关文章或解释某些概念吗？`;
+      break;
+    case 'dashboard':
+      message = `您正在查看数据仪表盘。我可以帮您分析这些数据或解释某些指标。`;
+      break;
+    default:
+      message = '';
+  }
+
+  contextMessage.value = message;
+};
+
+// 滚动到底部
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (chatContainer.value) {
+      chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+    }
+  });
+};
+
+// 组件挂载时初始化
+onMounted(() => {
+  // 初始化上下文消息
+  updateContextMessage();
+
+  // 提供isAiPanelOpen给其他组件，使用ref包装以确保它是响应式的
+  const isAiPanelOpenRef = ref(props.isOpen);
+
+  // 监听props.isOpen的变化，同步到isAiPanelOpenRef
+  watch(() => props.isOpen, (newValue) => {
+    isAiPanelOpenRef.value = newValue;
+
+    // 当面板打开时，滚动到底部
+    if (newValue) {
+      nextTick(() => {
+        scrollToBottom();
+      });
+    }
+  });
+
+  // 监听isAiPanelOpenRef的变化，同步到props.isOpen
+  watch(isAiPanelOpenRef, (newValue) => {
+    if (newValue !== props.isOpen) {
+      emit('update:isOpen', newValue);
+    }
+  });
+
+  provide('isAiPanelOpen', isAiPanelOpenRef);
+});
 </script>
 
 <style scoped>

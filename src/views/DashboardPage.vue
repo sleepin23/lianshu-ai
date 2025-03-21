@@ -16,7 +16,7 @@
       <h1 class="page-title">数据概览</h1>
 
       <div class="stats-cards">
-        <div class="stat-card">
+        <div class="stat-card" @click="selectMetric('revenue')">
           <div class="stat-icon revenue">💰</div>
           <div class="stat-details">
             <h3 class="stat-title">总收入</h3>
@@ -24,7 +24,7 @@
             <div class="stat-change positive">+12.5% 较上月</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" @click="selectMetric('users')">
           <div class="stat-icon users">👥</div>
           <div class="stat-details">
             <h3 class="stat-title">活跃用户</h3>
@@ -32,7 +32,7 @@
             <div class="stat-change positive">+5.3% 较上月</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" @click="selectMetric('orders')">
           <div class="stat-icon orders">📦</div>
           <div class="stat-details">
             <h3 class="stat-title">订单数量</h3>
@@ -45,15 +45,15 @@
       <div class="charts-section">
         <div class="chart-card large">
           <div class="chart-header">
-            <h3 class="chart-title">收入趋势</h3>
-            <select class="chart-select">
-              <option>最近7天</option>
-              <option>最近30天</option>
-              <option>最近90天</option>
+            <h3 class="chart-title">{{ chartTitles[selectedMetric] || '收入趋势' }}</h3>
+            <select class="chart-select" v-model="timeRange">
+              <option value="7">最近7天</option>
+              <option value="30">最近30天</option>
+              <option value="90">最近90天</option>
             </select>
           </div>
           <div class="chart-placeholder">
-            收入趋势图表
+            {{ chartTitles[selectedMetric] || '收入趋势' }}图表
           </div>
         </div>
 
@@ -84,6 +84,90 @@
   </div>
 </template>
 
+<script setup lang="ts">
+import { ref, reactive, onMounted, watch, inject } from 'vue';
+
+// 获取上下文更新方法
+const updatePageContext = inject('updatePageContext') as Function;
+
+// 选中的指标
+const selectedMetric = ref('revenue');
+
+// 时间范围
+const timeRange = ref('30');
+
+// 图表标题
+const chartTitles = {
+  revenue: '收入趋势',
+  users: '用户增长',
+  orders: '订单数量'
+};
+
+// 仪表盘数据
+const dashboardData = reactive({
+  metrics: {
+    revenue: {
+      value: '¥128,430',
+      change: '+12.5%',
+      trend: 'positive'
+    },
+    users: {
+      value: '8,642',
+      change: '+5.3%',
+      trend: 'positive'
+    },
+    orders: {
+      value: '1,204',
+      change: '-2.1%',
+      trend: 'negative'
+    }
+  },
+  timeRange: '30'
+});
+
+// 选择指标
+const selectMetric = (metric: string) => {
+  selectedMetric.value = metric;
+};
+
+// 组件挂载时更新上下文
+onMounted(() => {
+  updatePageContext({
+    pageType: 'dashboard',
+    pageTitle: '数据仪表盘',
+    keywords: ['数据分析', '仪表盘', '业务指标'],
+    pageData: {
+      dashboard: dashboardData,
+      selectedMetric: selectedMetric.value,
+      timeRange: timeRange.value
+    }
+  });
+});
+
+// 监听选中指标变化，更新上下文
+watch(selectedMetric, (newMetric) => {
+  updatePageContext({
+    pageData: {
+      dashboard: dashboardData,
+      selectedMetric: newMetric,
+      timeRange: timeRange.value
+    }
+  });
+});
+
+// 监听时间范围变化，更新上下文
+watch(timeRange, (newRange) => {
+  dashboardData.timeRange = newRange;
+  updatePageContext({
+    pageData: {
+      dashboard: dashboardData,
+      selectedMetric: selectedMetric.value,
+      timeRange: newRange
+    }
+  });
+});
+</script>
+
 <style scoped>
 .dashboard-page {
   max-width: 1200px;
@@ -96,12 +180,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 0;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .logo h1 {
   font-size: 24px;
-  color: #333;
+  color: var(--text-color);
   font-weight: 700;
   margin: 0;
 }
@@ -113,13 +197,13 @@ nav {
 
 .nav-link {
   text-decoration: none;
-  color: #333;
+  color: var(--text-color);
   font-weight: 500;
   transition: color 0.2s;
 }
 
 .nav-link:hover, .nav-link.active, .router-link-active {
-  color: #4a6cf7;
+  color: var(--primary-color);
 }
 
 .dashboard-content {
@@ -129,7 +213,7 @@ nav {
 .page-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1a202c;
+  color: var(--text-color);
   margin-bottom: 30px;
   margin-top: 0;
 }
@@ -142,12 +226,19 @@ nav {
 }
 
 .stat-card {
-  background-color: white;
+  background-color: var(--card-bg);
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .stat-icon {
@@ -162,17 +253,17 @@ nav {
 }
 
 .stat-icon.revenue {
-  background-color: #ebf8ff;
+  background-color: rgba(49, 130, 206, 0.1);
   color: #3182ce;
 }
 
 .stat-icon.users {
-  background-color: #e9f5fe;
+  background-color: rgba(43, 108, 176, 0.1);
   color: #2b6cb0;
 }
 
 .stat-icon.orders {
-  background-color: #faf5ff;
+  background-color: rgba(128, 90, 213, 0.1);
   color: #805ad5;
 }
 
@@ -182,7 +273,7 @@ nav {
 
 .stat-title {
   font-size: 14px;
-  color: #718096;
+  color: var(--muted-text);
   margin-bottom: 5px;
   margin-top: 0;
 }
@@ -190,7 +281,7 @@ nav {
 .stat-value {
   font-size: 24px;
   font-weight: 700;
-  color: #1a202c;
+  color: var(--text-color);
   margin-bottom: 5px;
 }
 
@@ -215,7 +306,7 @@ nav {
 }
 
 .chart-card {
-  background-color: white;
+  background-color: var(--card-bg);
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
@@ -241,84 +332,34 @@ nav {
 .chart-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1a202c;
+  color: var(--text-color);
   margin: 0;
 }
 
 .chart-select {
   padding: 6px 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 14px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .chart-placeholder {
   height: 250px;
-  background-color: #f8f9fa;
+  background-color: var(--secondary-bg);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #a0aec0;
+  color: var(--muted-text);
 }
 
 .footer {
   text-align: center;
   padding: 20px 0;
-  border-top: 1px solid #eaeaea;
-  color: #666;
+  border-top: 1px solid var(--border-color);
+  color: var(--muted-text);
   margin-top: 40px;
-}
-
-/* 暗黑模式样式 */
-@media (prefers-color-scheme: dark) {
-  .logo h1 {
-    color: #e0e0e0;
-  }
-
-  .nav-link {
-    color: #e0e0e0;
-  }
-
-  .nav-link:hover, .nav-link.active, .router-link-active {
-    color: #5d7bf9;
-  }
-
-  .page-title {
-    color: #e0e0e0;
-  }
-
-  .stat-card, .chart-card {
-    background-color: #1e1e1e;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-
-  .stat-title {
-    color: #a0aec0;
-  }
-
-  .stat-value {
-    color: #e0e0e0;
-  }
-
-  .chart-title {
-    color: #e0e0e0;
-  }
-
-  .chart-select {
-    background-color: #252525;
-    border-color: #333;
-    color: #e0e0e0;
-  }
-
-  .chart-placeholder {
-    background-color: #252525;
-    color: #718096;
-  }
-
-  .footer {
-    border-top: 1px solid #333;
-    color: #aaa;
-  }
 }
 </style>

@@ -18,12 +18,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, provide } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import AiButton from './components/AiButton.vue';
 import AiPanel from './components/AiPanel.vue';
+import { pageContext, updatePageContext, resetPageContext } from './services/contextService';
 
 const isAiPanelOpen = ref(false);
 const isDarkTheme = ref(false);
+const router = useRouter();
+const route = useRoute();
+
+// 提供上下文和更新方法给所有子组件
+provide('pageContext', pageContext);
+provide('updatePageContext', updatePageContext);
+provide('resetPageContext', resetPageContext);
+provide('isAiPanelOpen', isAiPanelOpen);
+
+// 监听路由变化，重置上下文
+watch(() => route.path, (newPath) => {
+  // 只更新路由信息，让具体页面组件更新其他上下文
+  updatePageContext({ route: newPath });
+});
 
 // 初始化主题
 onMounted(() => {
@@ -39,6 +55,9 @@ onMounted(() => {
 
   // 应用主题到body元素
   applyTheme();
+
+  // 初始化上下文
+  updatePageContext({ route: route.path });
 });
 
 // 监听主题变化
@@ -125,7 +144,6 @@ body {
   overflow-x: hidden;
   height: 100%;
   padding-bottom: 80px; /* 为AI按钮留出空间 */
-  position: relative;
 
   /* 隐藏滚动条 - Webkit浏览器 (Chrome, Safari) */
   &::-webkit-scrollbar {

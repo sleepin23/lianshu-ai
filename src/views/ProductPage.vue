@@ -18,65 +18,65 @@
           <div class="image-placeholder">产品图片</div>
         </div>
         <div class="product-info">
-          <h1>超级智能手表 Pro</h1>
+          <h1>{{ product.name }}</h1>
           <div class="product-rating">
             <span class="stars">★★★★☆</span>
             <span class="reviews">(128 评价)</span>
           </div>
-          <div class="product-price">¥1,999.00</div>
+          <div class="product-price">{{ product.price }}</div>
           <p class="product-description">
-            这款超级智能手表配备了先进的健康监测功能，包括心率监测、血氧监测和睡眠追踪。
-            它还具有长达7天的电池续航时间，防水功能，以及多种运动模式。
+            {{ product.description }}
           </p>
           <div class="product-colors">
             <span class="color-label">颜色：</span>
             <div class="color-options">
-              <div class="color-option black active"></div>
-              <div class="color-option silver"></div>
-              <div class="color-option gold"></div>
-              <div class="color-option blue"></div>
+              <div
+                  v-for="color in product.colors"
+                  :key="color.id"
+                  class="color-option"
+                  :class="[color.code, { active: color.id === selectedColor }]"
+                  @click="selectedColor = color.id"
+              ></div>
             </div>
           </div>
           <div class="product-actions">
-            <button class="btn-primary">立即购买</button>
-            <button class="btn-secondary">加入购物车</button>
+            <button class="btn-primary" @click="addToCart">立即购买</button>
+            <button class="btn-secondary" @click="addToCart">加入购物车</button>
           </div>
         </div>
       </div>
 
       <section class="product-details">
         <div class="tabs">
-          <button class="tab active">规格参数</button>
-          <button class="tab">功能特点</button>
-          <button class="tab">用户评价</button>
+          <button
+              v-for="tab in tabs"
+              :key="tab.id"
+              class="tab"
+              :class="{ active: activeTab === tab.id }"
+              @click="activeTab = tab.id"
+          >
+            {{ tab.name }}
+          </button>
         </div>
 
         <div class="tab-content">
-          <div class="specs">
-            <div class="spec-item">
-              <div class="spec-name">屏幕</div>
-              <div class="spec-value">1.78英寸 AMOLED 显示屏</div>
+          <div v-if="activeTab === 'specs'" class="specs">
+            <div v-for="(spec, index) in product.specs" :key="index" class="spec-item">
+              <div class="spec-name">{{ spec.name }}</div>
+              <div class="spec-value">{{ spec.value }}</div>
             </div>
-            <div class="spec-item">
-              <div class="spec-name">电池</div>
-              <div class="spec-value">410mAh，最长7天续航</div>
-            </div>
-            <div class="spec-item">
-              <div class="spec-name">防水等级</div>
-              <div class="spec-value">5ATM</div>
-            </div>
-            <div class="spec-item">
-              <div class="spec-name">连接</div>
-              <div class="spec-value">蓝牙5.2，WiFi</div>
-            </div>
-            <div class="spec-item">
-              <div class="spec-name">传感器</div>
-              <div class="spec-value">心率，加速度计，陀螺仪，气压计</div>
-            </div>
-            <div class="spec-item">
-              <div class="spec-name">尺寸</div>
-              <div class="spec-value">46 x 46 x 10.7 mm</div>
-            </div>
+          </div>
+
+          <div v-else-if="activeTab === 'features'" class="features">
+            <ul>
+              <li v-for="(feature, index) in product.features" :key="index">
+                {{ feature }}
+              </li>
+            </ul>
+          </div>
+
+          <div v-else-if="activeTab === 'reviews'" class="reviews">
+            <p>用户评价功能即将上线...</p>
           </div>
         </div>
       </section>
@@ -84,25 +84,15 @@
       <section class="related-products">
         <h2>相关产品</h2>
         <div class="product-grid">
-          <div class="product-card">
+          <div
+              v-for="relatedProduct in relatedProducts"
+              :key="relatedProduct.id"
+              class="product-card"
+              @click="viewProduct(relatedProduct.id)"
+          >
             <div class="product-card-image">产品图片</div>
-            <h3>智能手表 Lite</h3>
-            <p class="price">¥899.00</p>
-          </div>
-          <div class="product-card">
-            <div class="product-card-image">产品图片</div>
-            <h3>智能手环 Mini</h3>
-            <p class="price">¥399.00</p>
-          </div>
-          <div class="product-card">
-            <div class="product-card-image">产品图片</div>
-            <h3>运动手表 Ultra</h3>
-            <p class="price">¥2,499.00</p>
-          </div>
-          <div class="product-card">
-            <div class="product-card-image">产品图片</div>
-            <h3>智能手表表带</h3>
-            <p class="price">¥129.00</p>
+            <h3>{{ relatedProduct.name }}</h3>
+            <p class="price">{{ relatedProduct.price }}</p>
           </div>
         </div>
       </section>
@@ -145,7 +135,124 @@
   </div>
 </template>
 
+<script setup lang="ts">
+import { ref, reactive, onMounted, watch, inject } from 'vue';
+
+// 获取上下文更新方法
+const updatePageContext = inject('updatePageContext') as Function;
+
+// 产品数据
+const product = reactive({
+  id: 1,
+  name: '超级智能手表 Pro',
+  price: '¥1,999.00',
+  description: '这款超级智能手表配备了先进的健康监测功能，包括心率监测、血氧监测和睡眠追踪。它还具有长达7天的电池续航时间，防水功能，以及多种运动模式。',
+  colors: [
+    { id: 1, name: '黑色', code: 'black' },
+    { id: 2, name: '银色', code: 'silver' },
+    { id: 3, name: '金色', code: 'gold' },
+    { id: 4, name: '蓝色', code: 'blue' }
+  ],
+  specs: [
+    { name: '屏幕', value: '1.78英寸 AMOLED 显示屏' },
+    { name: '电池', value: '410mAh，最长7天续航' },
+    { name: '防水等级', value: '5ATM' },
+    { name: '连接', value: '蓝牙5.2，WiFi' },
+    { name: '传感器', value: '心率，加速度计，陀螺仪，气压计' },
+    { name: '尺寸', value: '46 x 46 x 10.7 mm' }
+  ],
+  features: [
+    '24小时心率监测',
+    '血氧饱和度监测',
+    '睡眠质量分析',
+    '50种运动模式',
+    '来电和消息通知',
+    '音乐控制',
+    '天气预报',
+    '防水5ATM'
+  ]
+});
+
+// 相关产品
+const relatedProducts = reactive([
+  { id: 2, name: '智能手表 Lite', price: '¥899.00' },
+  { id: 3, name: '智能手环 Mini', price: '¥399.00' },
+  { id: 4, name: '运动手表 Ultra', price: '¥2,499.00' },
+  { id: 5, name: '智能手表表带', price: '¥129.00' }
+]);
+
+// 选中的颜色
+const selectedColor = ref(1);
+
+// 标签页
+const tabs = [
+  { id: 'specs', name: '规格参数' },
+  { id: 'features', name: '功能特点' },
+  { id: 'reviews', name: '用户评价' }
+];
+
+// 当前活动标签
+const activeTab = ref('specs');
+
+// 添加到购物车
+const addToCart = () => {
+  const selectedColorObj = product.colors.find(c => c.id === selectedColor.value);
+  alert(`已将 ${product.name} (${selectedColorObj?.name}) 添加到购物车！`);
+};
+
+// 查看产品
+const viewProduct = (id: number) => {
+  alert(`查看产品ID: ${id}`);
+};
+
+// 组件挂载时更新上下文
+onMounted(() => {
+  updatePageContext({
+    pageType: 'product',
+    pageTitle: product.name,
+    keywords: ['智能手表', '健康监测', '可穿戴设备'],
+    pageData: {
+      product: {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        features: product.features
+      }
+    }
+  });
+});
+
+// 监听选中颜色变化，更新上下文
+watch(selectedColor, (newColor) => {
+  const selectedColorObj = product.colors.find(c => c.id === newColor);
+  if (selectedColorObj) {
+    updatePageContext({
+      pageData: {
+        product: {
+          ...product,
+          selectedColor: selectedColorObj.name
+        }
+      }
+    });
+  }
+});
+
+// 监听活动标签变化，更新上下文
+watch(activeTab, (newTab) => {
+  updatePageContext({
+    pageData: {
+      product: {
+        ...product,
+        activeTab: newTab
+      }
+    }
+  });
+});
+</script>
+
 <style scoped>
+/* 保留原有样式，但使用CSS变量 */
 .product-page {
   max-width: 1200px;
   margin: 0 auto;
@@ -158,12 +265,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 0;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .logo h1 {
   font-size: 24px;
-  color: #333;
+  color: var(--text-color);
   font-weight: 700;
   margin: 0;
 }
@@ -175,13 +282,13 @@ nav {
 
 .nav-link {
   text-decoration: none;
-  color: #333;
+  color: var(--text-color);
   font-weight: 500;
   transition: color 0.2s;
 }
 
 .nav-link:hover, .nav-link.active {
-  color: #4a6cf7;
+  color: var(--primary-color);
 }
 
 main {
@@ -196,7 +303,7 @@ main {
 }
 
 .product-image {
-  background-color: #f0f0f0;
+  background-color: var(--secondary-bg);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
@@ -206,7 +313,7 @@ main {
 }
 
 .image-placeholder {
-  color: #999;
+  color: var(--muted-text);
   font-size: 18px;
 }
 
@@ -218,7 +325,7 @@ main {
 
 .product-info h1 {
   font-size: 32px;
-  color: #333;
+  color: var(--text-color);
   margin: 0;
 }
 
@@ -234,17 +341,17 @@ main {
 }
 
 .reviews {
-  color: #666;
+  color: var(--muted-text);
 }
 
 .product-price {
   font-size: 28px;
   font-weight: 700;
-  color: #4a6cf7;
+  color: var(--primary-color);
 }
 
 .product-description {
-  color: #666;
+  color: var(--muted-text);
   line-height: 1.8;
   margin: 0;
 }
@@ -279,7 +386,7 @@ main {
   left: -4px;
   right: -4px;
   bottom: -4px;
-  border: 2px solid #4a6cf7;
+  border: 2px solid var(--primary-color);
   border-radius: 50%;
 }
 
@@ -315,23 +422,23 @@ main {
 }
 
 .btn-primary {
-  background-color: #4a6cf7;
+  background-color: var(--primary-color);
   color: white;
   border: none;
 }
 
 .btn-primary:hover {
-  background-color: #3a5bd9;
+  background-color: var(--primary-hover);
 }
 
 .btn-secondary {
-  background-color: white;
-  color: #4a6cf7;
-  border: 1px solid #4a6cf7;
+  background-color: var(--card-bg);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
 }
 
 .btn-secondary:hover {
-  background-color: #f0f4ff;
+  background-color: var(--secondary-bg);
 }
 
 .product-details {
@@ -340,7 +447,7 @@ main {
 
 .tabs {
   display: flex;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 1px solid var(--border-color);
   margin-bottom: 30px;
 }
 
@@ -350,13 +457,13 @@ main {
   border: none;
   font-size: 16px;
   font-weight: 500;
-  color: #666;
+  color: var(--muted-text);
   cursor: pointer;
   position: relative;
 }
 
 .tab.active {
-  color: #4a6cf7;
+  color: var(--primary-color);
 }
 
 .tab.active::after {
@@ -366,7 +473,7 @@ main {
   left: 0;
   right: 0;
   height: 3px;
-  background-color: #4a6cf7;
+  background-color: var(--primary-color);
 }
 
 .specs {
@@ -378,7 +485,7 @@ main {
 .spec-item {
   display: flex;
   padding: 15px;
-  background-color: #f9f9f9;
+  background-color: var(--secondary-bg);
   border-radius: 6px;
 }
 
@@ -388,9 +495,20 @@ main {
   flex-shrink: 0;
 }
 
+.features ul {
+  list-style-type: disc;
+  padding-left: 20px;
+  color: var(--text-color);
+}
+
+.features ul li {
+  margin-bottom: 10px;
+}
+
 .related-products h2 {
   font-size: 24px;
   margin-bottom: 30px;
+  color: var(--text-color);
 }
 
 .product-grid {
@@ -400,11 +518,12 @@ main {
 }
 
 .product-card {
-  background-color: white;
+  background-color: var(--card-bg);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
 }
 
 .product-card:hover {
@@ -414,30 +533,31 @@ main {
 
 .product-card-image {
   height: 200px;
-  background-color: #f0f0f0;
+  background-color: var(--secondary-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #999;
+  color: var(--muted-text);
 }
 
 .product-card h3 {
   padding: 15px 15px 5px;
   font-size: 16px;
   margin: 0;
+  color: var(--text-color);
 }
 
 .product-card .price {
   padding: 0 15px 15px;
-  color: #4a6cf7;
+  color: var(--primary-color);
   font-weight: 600;
   margin: 0;
 }
 
 footer {
   margin-top: 60px;
-  background-color: #f8f9fa;
-  border-top: 1px solid #eaeaea;
+  background-color: var(--secondary-bg);
+  border-top: 1px solid var(--border-color);
   padding: 60px 0 20px;
 }
 
@@ -451,7 +571,7 @@ footer {
 .footer-section h3 {
   font-size: 18px;
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-color);
   margin-top: 0;
 }
 
@@ -467,12 +587,12 @@ footer {
 
 .footer-section ul li a {
   text-decoration: none;
-  color: #666;
+  color: var(--muted-text);
   transition: color 0.2s;
 }
 
 .footer-section ul li a:hover {
-  color: #4a6cf7;
+  color: var(--primary-color);
 }
 
 .social-links {
@@ -482,152 +602,18 @@ footer {
 
 .social-link {
   text-decoration: none;
-  color: #666;
+  color: var(--muted-text);
   transition: color 0.2s;
 }
 
 .social-link:hover {
-  color: #4a6cf7;
+  color: var(--primary-color);
 }
 
 .copyright {
   text-align: center;
   padding-top: 20px;
-  border-top: 1px solid #eaeaea;
-  color: #666;
-}
-
-/* 暗黑模式样式 */
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #121212;
-    color: #e0e0e0;
-  }
-
-  .header {
-    border-bottom: 1px solid #333;
-  }
-
-  .logo h1 {
-    color: #e0e0e0;
-  }
-
-  .nav-link {
-    color: #e0e0e0;
-  }
-
-  .nav-link:hover, .nav-link.active {
-    color: #5d7bf9;
-  }
-
-  .product-image {
-    background-color: #1e1e1e;
-  }
-
-  .image-placeholder {
-    color: #777;
-  }
-
-  .product-info h1 {
-    color: #e0e0e0;
-  }
-
-  .reviews {
-    color: #aaa;
-  }
-
-  .product-price {
-    color: #5d7bf9;
-  }
-
-  .product-description {
-    color: #aaa;
-  }
-
-  .btn-primary {
-    background-color: #5d7bf9;
-  }
-
-  .btn-primary:hover {
-    background-color: #4a6cf7;
-  }
-
-  .btn-secondary {
-    background-color: #1e1e1e;
-    color: #5d7bf9;
-    border: 1px solid #5d7bf9;
-  }
-
-  .btn-secondary:hover {
-    background-color: #252525;
-  }
-
-  .tabs {
-    border-bottom: 1px solid #333;
-  }
-
-  .tab {
-    color: #aaa;
-  }
-
-  .tab.active {
-    color: #5d7bf9;
-  }
-
-  .tab.active::after {
-    background-color: #5d7bf9;
-  }
-
-  .spec-item {
-    background-color: #1e1e1e;
-  }
-
-  .product-card {
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-  }
-
-  .product-card:hover {
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
-  }
-
-  .product-card-image {
-    background-color: #252525;
-    color: #777;
-  }
-
-  .product-card .price {
-    color: #5d7bf9;
-  }
-
-  footer {
-    background-color: #1a1a1a;
-    border-top: 1px solid #333;
-  }
-
-  .footer-section h3 {
-    color: #e0e0e0;
-  }
-
-  .footer-section ul li a {
-    color: #aaa;
-  }
-
-  .footer-section ul li a:hover {
-    color: #5d7bf9;
-  }
-
-  .social-link {
-    color: #aaa;
-  }
-
-  .social-link:hover {
-    color: #5d7bf9;
-  }
-
-  .copyright {
-    border-top: 1px solid #333;
-    color: #aaa;
-  }
+  border-top: 1px solid var(--border-color);
+  color: var(--muted-text);
 }
 </style>
